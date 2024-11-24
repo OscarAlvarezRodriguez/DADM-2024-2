@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.navigation.NavController
+import com.example.helloworld.navigation.Routes
 
 @Composable
 fun HelloScreen(navController: NavController) {
@@ -42,7 +43,7 @@ fun HelloScreen(navController: NavController) {
         )
 
         Button(
-            onClick = { navController.popBackStack() },
+            onClick = { navController.navigate(Routes.Main) },
         ) {
             Text(text = "Volver")
         }

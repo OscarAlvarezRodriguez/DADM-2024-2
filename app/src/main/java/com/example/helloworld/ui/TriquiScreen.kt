@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.helloworld.logic.TicTacToeGame
+import com.example.helloworld.navigation.Routes
 
 @Composable
 fun TriquiScreen(navController: NavController) {
@@ -141,7 +142,7 @@ fun TriquiScreen(navController: NavController) {
             }
 
             Button(
-                onClick = { navController.popBackStack() },
+                onClick = { navController.navigate(Routes.Main) },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
