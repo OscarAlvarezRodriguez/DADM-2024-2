@@ -1,13 +1,12 @@
 package com.example.helloworld.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,13 +16,15 @@ import com.example.helloworld.navigation.Routes
 
 @Composable
 fun TriquiScreen(navController: NavController) {
+    val context = LocalContext.current
     val game = remember { TicTacToeGame() }
     val board = remember { mutableStateListOf(*game.getBoard().toTypedArray()) }
     var status by remember { mutableStateOf("Tu turno") }
     var gameOver by remember { mutableStateOf(false) }
+    var showDifficultyDialog by remember { mutableStateOf(false) }
 
     fun checkWinner() {
-        when (val winner = game.checkForWinner()) {
+        when (game.checkForWinner()) {
             1 -> {
                 status = "Empate"
                 gameOver = true
@@ -63,6 +64,11 @@ fun TriquiScreen(navController: NavController) {
         gameOver = false
     }
 
+    fun changeDifficulty(newDifficulty: TicTacToeGame.DifficultyLevel) {
+        game.setDifficultyLevel(newDifficulty)
+        Toast.makeText(context, "Dificultad cambiada a ${newDifficulty.name}", Toast.LENGTH_SHORT).show()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +77,7 @@ fun TriquiScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Triqui - Tic Tac Toe",
+            text = "Dificultad - ${game.getDifficultyLevel()}",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
@@ -124,7 +130,7 @@ fun TriquiScreen(navController: NavController) {
             modifier = Modifier.padding(top = 16.dp)
         )
 
-        // Botones de Reiniciar y Regresar
+        // Botones de Reiniciar, Configuración y Volver
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,6 +148,16 @@ fun TriquiScreen(navController: NavController) {
             }
 
             Button(
+                onClick = { showDifficultyDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(text = "Dificultad")
+            }
+
+            Button(
                 onClick = { navController.navigate(Routes.Main) },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -151,5 +167,36 @@ fun TriquiScreen(navController: NavController) {
                 Text(text = "Volver")
             }
         }
+    }
+
+    if (showDifficultyDialog) {
+        AlertDialog(
+            onDismissRequest = { showDifficultyDialog = false },
+            title = { Text(text = "Selecciona la dificultad") },
+            text = {
+                Column {
+                    TicTacToeGame.DifficultyLevel.entries.forEach { level ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
+                                selected = game.getDifficultyLevel() == level,
+                                onClick = {
+                                    changeDifficulty(level)
+                                    showDifficultyDialog = false
+                                }
+                            )
+                            Text(text = level.name)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDifficultyDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 }

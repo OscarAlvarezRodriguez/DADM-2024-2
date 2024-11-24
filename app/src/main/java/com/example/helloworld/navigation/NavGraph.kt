@@ -1,6 +1,5 @@
 package com.example.helloworld.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -8,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.example.helloworld.ui.HelloScreen
 import com.example.helloworld.ui.MainScreen
 import com.example.helloworld.ui.TriquiScreen
+import com.example.helloworld.ui.ContainerMainScreen
 
 object Routes {
     const val Main = "main_screen"
@@ -19,23 +19,23 @@ object Routes {
 fun NavGraph(navController: NavHostController) {
     NavHost(navController = navController, startDestination = Routes.Main) {
         composable(Routes.Main) {
-            MainScreen(
+            ContainerMainScreen(
                 navController = navController,
                 title = "Inicio",
-                content = {  Text("Contenido de Inicio")  }
+                content = {  MainScreen(navController)  }
             )
         }
         composable(Routes.Hello) {
-            MainScreen(
+            ContainerMainScreen(
                 navController = navController,
                 title = "Hello world",
                 content = { HelloScreen(navController) }
             )
         }
         composable(Routes.Triqui_off) {
-            MainScreen(
+            ContainerMainScreen(
                 navController = navController,
-                title = "Hola",
+                title = "Triqui - Tic Tac Toe - Offline",
                 content = { TriquiScreen(navController) }
             )
         }
