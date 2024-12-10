@@ -61,4 +61,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.database.ktx)  // Realtime Database
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
 }

@@ -1,103 +1,139 @@
 package com.example.helloworld.ui
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavController
 import com.example.helloworld.logic.TicTacToeGame
 import com.example.helloworld.navigation.Routes
 import com.example.helloworld.R
+import kotlinx.coroutines.flow.map
+val Context.dataStore by preferencesDataStore(name = "game_preferences")
 
 @SuppressLint("ClickableViewAccessibility")
 @Composable
 fun TriquiScreen(navController: NavController) {
     val context = LocalContext.current
     val game = remember { TicTacToeGame() }
-    val board = remember { mutableStateListOf(*game.getBoard().toTypedArray()) }
-    var status by remember { mutableStateOf("Tu turno") }
-    var gameOver by remember { mutableStateOf(false) }
+    var board by rememberSaveable { mutableStateOf(game.getBoard().toList()) } // Tablero como List<Char>
+    var status by rememberSaveable { mutableStateOf("Tu turno") }
+    var gameOver by rememberSaveable { mutableStateOf(false) }
     var showDifficultyDialog by remember { mutableStateOf(false) }
 
-    // Inicialización de los MediaPlayer para los sonidos
-    val humanPlayerSound = MediaPlayer.create(context, R.raw.check) // Sonido del jugador
-    val computerPlayerSound = MediaPlayer.create(context, R.raw.mouse_click) // Sonido de la computadora
+    var humanWins by rememberSaveable { mutableStateOf(0) }
+    var computerWins by rememberSaveable { mutableStateOf(0) }
+    var ties by rememberSaveable { mutableStateOf(0) }
 
-    // Función para reproducir el sonido del jugador
-    fun playHumanMoveSound() {
-        humanPlayerSound.start()
+    val humanPlayerSound = MediaPlayer.create(context, R.raw.check)
+    val computerPlayerSound = MediaPlayer.create(context, R.raw.mouse_click)
+
+    // Claves para DataStore
+    val boardKey = stringPreferencesKey("board_state")
+
+    // Función para guardar el estado del tablero
+    suspend fun saveBoardState() {
+        val boardString = board.joinToString("") // Convertir List<Char> a String
+        context.dataStore.edit { preferences ->
+            preferences[boardKey] = boardString
+        }
     }
 
-    // Función para reproducir el sonido de la computadora
-    fun playComputerMoveSound() {
-        computerPlayerSound.start()
+    // Función para cargar el estado del tablero
+    val boardFlow = context.dataStore.data.map { preferences ->
+        preferences[boardKey]?.toList()?.map { it } ?: game.getBoard().toList()
+    }
+    val savedBoard by boardFlow.collectAsState(initial = game.getBoard().toList())
+
+    // Actualizar el estado inicial del tablero desde DataStore
+    LaunchedEffect(board) {
+        val boardString = board.joinToString("") // Convertir List<Char> a String
+        context.dataStore.edit { preferences ->
+            preferences[stringPreferencesKey("board_state")] = boardString
+        }
     }
 
-    // Actualiza el estado lógico del tablero en BoardView
-    fun updateBoardView(boardView: BoardView) {
-        boardView.setBoard(board.toCharArray())
+
+    fun checkWinner(): Int {
+        return game.checkForWinner()
     }
 
-    // Verifica el ganador y actualiza el estado
-    fun checkWinner() {
-        when (game.checkForWinner()) {
-            1 -> {
-                status = "Empate"
-                gameOver = true
+    LaunchedEffect(gameOver) {
+        if (gameOver) {
+            when (checkWinner()) {
+                1 -> ties++
+                2 -> humanWins++
+                3 -> computerWins++
             }
-            2 -> {
-                status = "¡Ganaste!"
-                gameOver = true
-            }
-            3 -> {
-                status = "La computadora ganó"
-                gameOver = true
+            context.dataStore.edit { preferences ->
+                preferences[intPreferencesKey("humanWins")] = humanWins
+                preferences[intPreferencesKey("computerWins")] = computerWins
+                preferences[intPreferencesKey("ties")] = ties
             }
         }
     }
 
-    // Maneja los toques en las celdas del tablero
     fun onCellTouched(index: Int, boardView: BoardView) {
-        if (!gameOver && board[index] == TicTacToeGame.OPEN_SPOT) {
+        if (!gameOver && index in board.indices && board[index] == TicTacToeGame.OPEN_SPOT) {
             game.setMove(TicTacToeGame.HUMAN_PLAYER, index)
-            board[index] = TicTacToeGame.HUMAN_PLAYER
-            playHumanMoveSound()
-            updateBoardView(boardView)
-            checkWinner()
-            if (!gameOver) {
+            board = board.toMutableList().apply { this[index] = TicTacToeGame.HUMAN_PLAYER }
+            humanPlayerSound.start()
+            boardView.setBoard(board.toCharArray())
+            val winner = checkWinner()
+            if (winner != 0) {
+                gameOver = true
+                status = when (winner) {
+                    1 -> "Empate"
+                    2 -> "¡Ganaste!"
+                    3 -> "La computadora ganó"
+                    else -> "Error"
+                }
+            } else {
                 status = "Turno de la computadora"
-                // Introducimos un retraso antes de que la computadora realice su movimiento
-                val handler = Handler(Looper.getMainLooper())
-                handler.postDelayed({
+                Handler(Looper.getMainLooper()).postDelayed({
                     val computerMove = game.getComputerMove()
-                    board[computerMove] = TicTacToeGame.COMPUTER_PLAYER
-                    playComputerMoveSound() // Reproducir sonido de la computadora
-                    updateBoardView(boardView)
-                    checkWinner()
-                    if (!gameOver) status = "Tu turno"
-                }, 1000) // 1000 milisegundos = 1 segundo de retraso
+                    board = board.toMutableList().apply { this[computerMove] = TicTacToeGame.COMPUTER_PLAYER }
+                    computerPlayerSound.start()
+                    boardView.setBoard(board.toCharArray())
+                    val compWinner = checkWinner()
+                    if (compWinner != 0) {
+                        gameOver = true
+                        status = when (compWinner) {
+                            1 -> "Empate"
+                            2 -> "¡Ganaste!"
+                            3 -> "La computadora ganó"
+                            else -> "Error"
+                        }
+                    } else {
+                        status = "Tu turno"
+                    }
+                }, 1000)
             }
         }
     }
 
-    // Reinicia el juego
+
     fun resetGame(boardView: BoardView) {
         game.clearBoard()
-        for (i in board.indices) {
-            board[i] = TicTacToeGame.OPEN_SPOT
-        }
+        board = game.getBoard().toList()
         status = "Tu turno"
         gameOver = false
-        updateBoardView(boardView)
+        boardView.setBoard(board.toCharArray())
     }
 
     Column(
@@ -108,16 +144,16 @@ fun TriquiScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Dificultad - ${game.getDifficultyLevel()}",
+            text = "Human: $humanWins | Computer: $computerWins | Ties: $ties",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Center
         )
 
         // Tablero usando BoardView
         AndroidView(
-            factory = { context ->
-                BoardView(context).apply {
+            factory = { localContext ->
+                BoardView(localContext).apply {
                     setBoard(board.toCharArray())
                     setOnTouchListener { _, event ->
                         if (event.action == android.view.MotionEvent.ACTION_DOWN) {
@@ -147,7 +183,6 @@ fun TriquiScreen(navController: NavController) {
             modifier = Modifier.padding(top = 16.dp)
         )
 
-        // Botones de Reiniciar, Configuración y Volver
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -186,7 +221,6 @@ fun TriquiScreen(navController: NavController) {
         }
     }
 
-    // Dialogo para cambiar dificultad
     if (showDifficultyDialog) {
         AlertDialog(
             onDismissRequest = { showDifficultyDialog = false },
