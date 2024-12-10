@@ -1,7 +1,9 @@
 package com.example.helloworld.ui
 
 import android.annotation.SuppressLint
-import android.widget.Toast
+import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,11 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.helloworld.logic.TicTacToeGame
 import com.example.helloworld.navigation.Routes
+import com.example.helloworld.R
 
 @SuppressLint("ClickableViewAccessibility")
 @Composable
@@ -25,6 +27,20 @@ fun TriquiScreen(navController: NavController) {
     var status by remember { mutableStateOf("Tu turno") }
     var gameOver by remember { mutableStateOf(false) }
     var showDifficultyDialog by remember { mutableStateOf(false) }
+
+    // Inicialización de los MediaPlayer para los sonidos
+    val humanPlayerSound = MediaPlayer.create(context, R.raw.check) // Sonido del jugador
+    val computerPlayerSound = MediaPlayer.create(context, R.raw.mouse_click) // Sonido de la computadora
+
+    // Función para reproducir el sonido del jugador
+    fun playHumanMoveSound() {
+        humanPlayerSound.start()
+    }
+
+    // Función para reproducir el sonido de la computadora
+    fun playComputerMoveSound() {
+        computerPlayerSound.start()
+    }
 
     // Actualiza el estado lógico del tablero en BoardView
     fun updateBoardView(boardView: BoardView) {
@@ -54,15 +70,21 @@ fun TriquiScreen(navController: NavController) {
         if (!gameOver && board[index] == TicTacToeGame.OPEN_SPOT) {
             game.setMove(TicTacToeGame.HUMAN_PLAYER, index)
             board[index] = TicTacToeGame.HUMAN_PLAYER
+            playHumanMoveSound()
             updateBoardView(boardView)
             checkWinner()
             if (!gameOver) {
                 status = "Turno de la computadora"
-                val computerMove = game.getComputerMove()
-                board[computerMove] = TicTacToeGame.COMPUTER_PLAYER
-                updateBoardView(boardView)
-                checkWinner()
-                if (!gameOver) status = "Tu turno"
+                // Introducimos un retraso antes de que la computadora realice su movimiento
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed({
+                    val computerMove = game.getComputerMove()
+                    board[computerMove] = TicTacToeGame.COMPUTER_PLAYER
+                    playComputerMoveSound() // Reproducir sonido de la computadora
+                    updateBoardView(boardView)
+                    checkWinner()
+                    if (!gameOver) status = "Tu turno"
+                }, 1000) // 1000 milisegundos = 1 segundo de retraso
             }
         }
     }
