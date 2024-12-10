@@ -18,7 +18,7 @@ class TicTacToeGame {
 
     companion object {
         const val HUMAN_PLAYER = 'X'
-        const val COMPUTER_PLAYER = 'G'
+        const val COMPUTER_PLAYER = 'O'
         const val OPEN_SPOT = ' '
     }
 

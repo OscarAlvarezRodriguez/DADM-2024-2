@@ -29,7 +29,8 @@ import kotlinx.coroutines.launch
 val menuItems = listOf(
     "Inicio",
     "Hello world",
-    "Triqui offline"
+    "Triqui offline",
+    "Triqui online"
 )
 
 @Composable
@@ -89,6 +90,7 @@ fun NavigationDrawerContent(navController: NavController) {
                         "Inicio" -> navController.navigate(Routes.Main)
                         "Hello world" -> navController.navigate(Routes.Hello)
                         "Triqui offline" -> navController.navigate(Routes.Triqui_off)
+                        "Triqui online" -> navController.navigate(Routes.Triqui_on)
                     }
                 },
             ) {

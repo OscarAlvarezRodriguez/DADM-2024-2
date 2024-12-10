@@ -1,5 +1,6 @@
 package com.example.helloworld.ui
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -10,10 +11,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.helloworld.logic.TicTacToeGame
 import com.example.helloworld.navigation.Routes
 
+@SuppressLint("ClickableViewAccessibility")
 @Composable
 fun TriquiScreen(navController: NavController) {
     val context = LocalContext.current
@@ -23,6 +26,12 @@ fun TriquiScreen(navController: NavController) {
     var gameOver by remember { mutableStateOf(false) }
     var showDifficultyDialog by remember { mutableStateOf(false) }
 
+    // Actualiza el estado lógico del tablero en BoardView
+    fun updateBoardView(boardView: BoardView) {
+        boardView.setBoard(board.toCharArray())
+    }
+
+    // Verifica el ganador y actualiza el estado
     fun checkWinner() {
         when (game.checkForWinner()) {
             1 -> {
@@ -40,39 +49,39 @@ fun TriquiScreen(navController: NavController) {
         }
     }
 
-    fun onButtonClick(index: Int) {
+    // Maneja los toques en las celdas del tablero
+    fun onCellTouched(index: Int, boardView: BoardView) {
         if (!gameOver && board[index] == TicTacToeGame.OPEN_SPOT) {
             game.setMove(TicTacToeGame.HUMAN_PLAYER, index)
             board[index] = TicTacToeGame.HUMAN_PLAYER
+            updateBoardView(boardView)
             checkWinner()
             if (!gameOver) {
                 status = "Turno de la computadora"
                 val computerMove = game.getComputerMove()
                 board[computerMove] = TicTacToeGame.COMPUTER_PLAYER
+                updateBoardView(boardView)
                 checkWinner()
                 if (!gameOver) status = "Tu turno"
             }
         }
     }
 
-    fun resetGame() {
+    // Reinicia el juego
+    fun resetGame(boardView: BoardView) {
         game.clearBoard()
         for (i in board.indices) {
             board[i] = TicTacToeGame.OPEN_SPOT
         }
         status = "Tu turno"
         gameOver = false
-    }
-
-    fun changeDifficulty(newDifficulty: TicTacToeGame.DifficultyLevel) {
-        game.setDifficultyLevel(newDifficulty)
-        Toast.makeText(context, "Dificultad cambiada a ${newDifficulty.name}", Toast.LENGTH_SHORT).show()
+        updateBoardView(boardView)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -83,44 +92,30 @@ fun TriquiScreen(navController: NavController) {
             textAlign = TextAlign.Center,
         )
 
-        // Tablero 3x3
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            verticalArrangement = Arrangement.SpaceEvenly,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            for (row in 0..2) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    for (col in 0..2) {
-                        val index = row * 3 + col
-                        Button(
-                            onClick = { onButtonClick(index) },
-                            enabled = board[index] == TicTacToeGame.OPEN_SPOT && !gameOver,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = when (board[index]) {
-                                    TicTacToeGame.HUMAN_PLAYER -> MaterialTheme.colorScheme.primary
-                                    TicTacToeGame.COMPUTER_PLAYER -> MaterialTheme.colorScheme.secondary
-                                    else -> MaterialTheme.colorScheme.secondary
-                                },
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            modifier = Modifier.size(100.dp)
-                        ) {
-                            Text(
-                                text = board[index].toString(),
-                                fontSize = 24.sp,
-                                textAlign = TextAlign.Center
-                            )
+        // Tablero usando BoardView
+        AndroidView(
+            factory = { context ->
+                BoardView(context).apply {
+                    setBoard(board.toCharArray())
+                    setOnTouchListener { _, event ->
+                        if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                            val cellWidth = width / 3
+                            val cellHeight = height / 3
+                            val col = (event.x / cellWidth).toInt()
+                            val row = (event.y / cellHeight).toInt()
+                            val index = row * 3 + col
+                            onCellTouched(index, this)
+                            true
+                        } else {
+                            false
                         }
                     }
                 }
-            }
-        }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        )
 
         Text(
             text = status,
@@ -138,7 +133,7 @@ fun TriquiScreen(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(
-                onClick = { resetGame() },
+                onClick = { resetGame(BoardView(context)) },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -169,6 +164,7 @@ fun TriquiScreen(navController: NavController) {
         }
     }
 
+    // Dialogo para cambiar dificultad
     if (showDifficultyDialog) {
         AlertDialog(
             onDismissRequest = { showDifficultyDialog = false },
@@ -183,7 +179,7 @@ fun TriquiScreen(navController: NavController) {
                             RadioButton(
                                 selected = game.getDifficultyLevel() == level,
                                 onClick = {
-                                    changeDifficulty(level)
+                                    game.setDifficultyLevel(level)
                                     showDifficultyDialog = false
                                 }
                             )

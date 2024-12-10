@@ -8,11 +8,13 @@ import com.example.helloworld.ui.HelloScreen
 import com.example.helloworld.ui.MainScreen
 import com.example.helloworld.ui.TriquiScreen
 import com.example.helloworld.ui.ContainerMainScreen
+import com.example.helloworld.ui.TriquiOnlineScreen
 
 object Routes {
     const val Main = "main_screen"
     const val Hello = "hello_screen"
     const val Triqui_off = "triqui_off_screen"
+    const val Triqui_on = "triqui_on_screen"
 }
 
 @Composable
@@ -37,6 +39,13 @@ fun NavGraph(navController: NavHostController) {
                 navController = navController,
                 title = "Triqui - Tic Tac Toe - Offline",
                 content = { TriquiScreen(navController) }
+            )
+        }
+        composable(Routes.Triqui_on) {
+            ContainerMainScreen(
+                navController = navController,
+                title = "Triqui - Tic Tac Toe - Online",
+                content = { TriquiOnlineScreen(navController) }
             )
         }
     }
