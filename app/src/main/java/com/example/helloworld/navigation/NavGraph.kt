@@ -8,7 +8,9 @@ import androidx.navigation.navArgument
 import com.example.helloworld.ui.HelloScreen
 import com.example.helloworld.ui.MainScreen
 import com.example.helloworld.ui.TriquiScreen
+import com.example.helloworld.ui.EmpresasScreen
 import com.example.helloworld.ui.ContainerMainScreen
+import com.example.helloworld.ui.EmpresaFormScreen
 import com.example.helloworld.ui.triquiOnline.GameScreen
 import com.example.helloworld.ui.triquiOnline.TriquiOnlineScreen
 
@@ -18,6 +20,8 @@ object Routes {
     const val Triqui_off = "triqui_off_screen"
     const val Triqui_on = "triqui_on_screen"
     const val Game = "game/{gameId}" // Ruta dinámica
+    const val Empresas = "empresas_screen"
+    const val EmpresaForm = "empresa_form?empresaId={empresaId}" // Ruta dinámica para el formulario
 }
 
 
@@ -63,5 +67,27 @@ fun NavGraph(navController: NavHostController) {
                 content = { GameScreen(navController, gameId) }
             )
         }
+        composable(Routes.Empresas) {
+            ContainerMainScreen(
+                navController = navController,
+                title = "Gestión de Empresas",
+                content = { EmpresasScreen(navController) }
+            )
+        }
+        composable(
+            route = Routes.EmpresaForm,
+            arguments = listOf(navArgument("empresaId") {
+                type = androidx.navigation.NavType.IntType
+                defaultValue = -1 // Valor por defecto para indicar creación
+            })
+        ) { backStackEntry ->
+            val empresaId = backStackEntry.arguments?.getInt("empresaId").takeIf { it != -1 }
+            ContainerMainScreen(
+                navController = navController,
+                title = if (empresaId == null) "Agregar Empresa" else "Editar Empresa",
+                content = { EmpresaFormScreen(navController, empresaId) }
+            )
+        }
+
     }
 }

@@ -30,7 +30,8 @@ val menuItems = listOf(
     "Inicio",
     "Hello world",
     "Triqui offline",
-    "Triqui online"
+    "Triqui online",
+    "Empresas"
 )
 
 @Composable
@@ -91,6 +92,7 @@ fun NavigationDrawerContent(navController: NavController) {
                         "Hello world" -> navController.navigate(Routes.Hello)
                         "Triqui offline" -> navController.navigate(Routes.Triqui_off)
                         "Triqui online" -> navController.navigate(Routes.Triqui_on)
+                        "Empresas" -> navController.navigate(Routes.Empresas)
                     }
                 },
             ) {
