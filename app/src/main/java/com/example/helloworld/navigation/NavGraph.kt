@@ -11,6 +11,7 @@ import com.example.helloworld.ui.TriquiScreen
 import com.example.helloworld.ui.EmpresasScreen
 import com.example.helloworld.ui.ContainerMainScreen
 import com.example.helloworld.ui.EmpresaFormScreen
+import com.example.helloworld.ui.map.MapScreen
 import com.example.helloworld.ui.triquiOnline.GameScreen
 import com.example.helloworld.ui.triquiOnline.TriquiOnlineScreen
 
@@ -22,6 +23,7 @@ object Routes {
     const val Game = "game/{gameId}" // Ruta dinámica
     const val Empresas = "empresas_screen"
     const val EmpresaForm = "empresa_form?empresaId={empresaId}" // Ruta dinámica para el formulario
+    const val Mapa = "mapa"
 }
 
 
@@ -86,6 +88,13 @@ fun NavGraph(navController: NavHostController) {
                 navController = navController,
                 title = if (empresaId == null) "Agregar Empresa" else "Editar Empresa",
                 content = { EmpresaFormScreen(navController, empresaId) }
+            )
+        }
+        composable(Routes.Mapa) {
+            ContainerMainScreen(
+                navController = navController,
+                title = "Mapa - OpenStreetMap",
+                content = { MapScreen(navController) }
             )
         }
 

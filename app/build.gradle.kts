@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,5 +63,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.database.ktx)  // Realtime Database
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-
+    implementation ("org.osmdroid:osmdroid-android:6.1.10")
+    implementation ("org.osmdroid:osmdroid-mapsforge:6.1.10")
 }
