@@ -65,4 +65,5 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation ("org.osmdroid:osmdroid-android:6.1.10")
     implementation ("org.osmdroid:osmdroid-mapsforge:6.1.10")
+    implementation("androidx.compose.material:material-icons-extended:1.5.1")
 }
